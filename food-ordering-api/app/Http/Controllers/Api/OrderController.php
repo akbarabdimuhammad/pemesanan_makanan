@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+    use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -19,44 +20,48 @@ class OrderController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'user_id'    => 'required|integer',
-            'total'      => 'required|integer',
-            'status'     => 'required|string',
-            'order_details' => 'required|array',
-            'order_details.*.menu_id'  => 'required|integer',
-            'order_details.*.quantity' => 'required|integer',
-            'order_details.*.subtotal' => 'required|integer',
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
 
-        // Simpan order
-        $order = Order::create([
-            'user_id' => $request->user_id,
-            'total'   => $request->total,
-            'status'  => $request->status,
-        ]);
+public function store(Request $request)
+{
+    $request->validate([
+        'user_id' => 'required|integer',
+        'total' => 'required|integer',
+        'status' => 'required|string',
+        'order_details' => 'required|array',
+        'order_details.*.menu_id' => 'required|integer',
+        'order_details.*.quantity' => 'required|integer',
+        'order_details.*.subtotal' => 'required|integer',
+    ]);
 
-        // Simpan detailnya
+    DB::beginTransaction();
+
+    try {
+        $order = Order::create($request->only(['user_id', 'total', 'status']));
+
         foreach ($request->order_details as $detail) {
-            $order->details()->create([
-                'menu_id'  => $detail['menu_id'],
-                'quantity' => $detail['quantity'],
-                'subtotal' => $detail['subtotal'],
-            ]);
+            $order->details()->create($detail);
         }
+
+        DB::commit();
 
         return response()->json([
             'success' => true,
-            'message' => 'Pesanan dan detailnya berhasil dibuat.',
-            'data'    => $order->load('details.menu')
+            'message' => 'Pesanan dan detail berhasil ditambahkan.',
+            'data' => $order->load('details')
         ], 201);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal menyimpan pesanan',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
 
     public function show(Order $order)
