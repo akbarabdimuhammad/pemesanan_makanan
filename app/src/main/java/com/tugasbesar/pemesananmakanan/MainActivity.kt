@@ -59,7 +59,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             )
         }
         composable("register") {
-            RegisterScreen(
+            RegisterScreen<Any>(
                 onRegisterSuccess = { navController.navigate("login") },
                 onNavigateToLogin = { navController.navigate("login") }
             )
