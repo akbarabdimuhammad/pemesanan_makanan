@@ -2,9 +2,9 @@ package com.tugasbesar.pemesananmakanan.data.model
 
 @Suppress("SpellCheckingInspection")
 data class Menu(
-    val menuId: Int,
-    val namaMakanan: String,
-    val harga: Double,
-    val kategori: String,
-    val stok: Int
+    val Id: Int,
+    val name: String,
+    val description : String,
+    val price : Int,
+    val image_url: Int
 )

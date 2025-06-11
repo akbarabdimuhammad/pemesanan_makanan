@@ -22,12 +22,8 @@ class MainViewModel @Inject constructor(
     fun fetchMenus() {
         viewModelScope.launch {
             try {
-                val response = apiService.getMenus()
-                if (response.isSuccessful) {
-                    _menus.value = response.body() ?: emptyList()
-                } else {
-                    Log.e("MainViewModel", "API Error: ${response.code()}")
-                }
+                val result = apiService.getMenus() // langsung List<Menu>
+                _menus.value = result
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Error fetching menus", e)
             }

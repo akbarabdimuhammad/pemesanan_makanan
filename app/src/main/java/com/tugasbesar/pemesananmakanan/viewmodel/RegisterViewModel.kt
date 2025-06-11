@@ -2,10 +2,14 @@ package com.tugasbesar.pemesananmakanan.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tugasbesar.pemesananmakanan.data.api.ApiClient
+import com.tugasbesar.pemesananmakanan.data.api.request.RegisterRequest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class RegisterUiState(
     val nameInput: String = "", // Tambahkan ini
@@ -91,22 +95,33 @@ class RegisterViewModel : ViewModel() {
     }
 
     fun register() {
-        if (!validateInputs()) {
-            return
-        }
+        if (!validateInputs()) return
 
         _uiState.value = _uiState.value.copy(isLoading = true, registerError = null)
 
         viewModelScope.launch {
-            // --- Simulate a network call for registration ---
-            kotlinx.coroutines.delay(2000) // Simulate network delay
+            try {
+                val request = RegisterRequest(
+                    name = _uiState.value.nameInput,
+                    email = _uiState.value.emailInput,
+                    password = _uiState.value.passwordInput
+                )
 
-            // In a real app, you'd send name, email and password to your backend/Firebase
-            val name = _uiState.value.nameInput
-            val email = _uiState.value.emailInput
-            val password = _uiState.value.passwordInput
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.apiService.register(request)
+                }
 
-        }
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isRegisterSuccess = true
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    registerError = "Gagal mendaftar: ${e.message}"
+                )
+                }
+            }
     }
 
     fun registrationHandled() {

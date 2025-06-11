@@ -2,10 +2,14 @@ package com.tugasbesar.pemesananmakanan.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tugasbesar.pemesananmakanan.data.api.ApiClient
+import com.tugasbesar.pemesananmakanan.data.api.request.LoginRequest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // Represents the UI state of the Login Screen
 data class LoginUiState(
@@ -58,33 +62,33 @@ class LoginViewModel : ViewModel() {
     }
 
     fun login() {
-        if (!validateInputs()) {
-            return // Stop if validation fails
-        }
+        if (!validateInputs()) return
 
         _uiState.value = _uiState.value.copy(isLoading = true, loginError = null)
 
         viewModelScope.launch {
-            // --- Simulate a network call (replace with actual API call) ---
-            kotlinx.coroutines.delay(2000) // Simulate network delay
-
-            val email = _uiState.value.emailInput
-            val password = _uiState.value.passwordInput
-
-            if (email == "test@example.com" && password == "password123") {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    isLoginSuccess = true, // Set success state
-                    loginError = null
+            try {
+                val request = LoginRequest(
+                    email = _uiState.value.emailInput,
+                    password = _uiState.value.passwordInput
                 )
-            } else {
+
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.apiService.login(request)
+                }
+
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    loginError = "Email atau password salah",
-                    isLoginSuccess = false
+                    isLoginSuccess = true
+                )
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    loginError = "Gagal login: ${e.message}"
                 )
             }
-        }
+            }
     }
 
     // Call this after successful navigation to reset the flag
